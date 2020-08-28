@@ -41,9 +41,6 @@ servier.result <- read.xlsx("02_Inputs/08_Servier_CHC_2016Q4_2020Q2.xlsx") %>%
   select(Pack_ID, Channel, Province, City, Date, ATC3, MKT, Molecule_Desc, 
          Prod_Desc, Pck_Desc, Corp_Desc, Sales, Units, DosageUnits)
 
-# MSD history
-msd.history <- read.xlsx('02_Inputs/MSD_Dashboard_Data_2019_2020Q1_20200717.xlsx')
-
 # final result
 msd.city.result <- msd.price %>% 
   filter(!(city %in% servier.target.city)) %>% 
@@ -67,16 +64,27 @@ msd.city.result <- msd.price %>%
                            Pack_ID), 
          Corp_Desc = if_else(Prod_Desc == "GLUCOPHAGE", "MERCK GROUP", Corp_Desc),
          Corp_Desc = if_else(Prod_Desc == 'ONGLYZA', 'ASTRAZENECA GROUP', Corp_Desc), 
-         Corp_Desc = if_else(Corp_Desc == "LVYE GROUP", "LUYE GROUP", Corp_Desc)) %>% 
+         Corp_Desc = if_else(Corp_Desc == "LVYE GROUP", "LUYE GROUP", Corp_Desc), 
+         # price4 = 103.26608, 
+         # price2 = 52.12415, 
+         Units = if_else(City == '上海' & Pack_ID == '4268604', 
+                         Sales / 103.26608, 
+                         Units), 
+         DosageUnits = if_else(City == '上海' & Pack_ID == '4268604', 
+                               Units * 14, 
+                               DosageUnits), 
+         Units = if_else(City == '上海' & Pack_ID == '4268602', 
+                         Sales / 52.12415, 
+                         Units), 
+         DosageUnits = if_else(City == '上海' & Pack_ID == '4268602', 
+                               Units * 7, 
+                               DosageUnits)) %>% 
   group_by(Pack_ID, Channel, Province, City, Date, ATC3, MKT, Molecule_Desc, 
            Prod_Desc, Pck_Desc, Corp_Desc) %>% 
   summarise(Sales = sum(Sales, na.rm = TRUE),
             Units = sum(Units, na.rm = TRUE),
             DosageUnits = sum(DosageUnits, na.rm = TRUE)) %>% 
   ungroup() %>% 
-  mutate(Sales = round(Sales, 2),
-         Units = round(Units),
-         DosageUnits = round(DosageUnits)) %>% 
   filter(Sales > 0, Units > 0, DosageUnits > 0) %>% 
   arrange(Date, Province, City, Pack_ID)
 
@@ -105,6 +113,54 @@ msd.result <- msd.city.result %>%
             Units = sum(Units, na.rm = TRUE),
             DosageUnits = sum(DosageUnits, na.rm = TRUE)) %>% 
   ungroup() %>% 
+  mutate(Sales = case_when(
+           Pack_ID == '4268604' & City == '福州' ~ Sales * 1.8, 
+           Pack_ID == '4268604' & City == '广州' ~ Sales * 0.7, 
+           Pack_ID == '4268602' & City == '广州' ~ Sales * 4, 
+           Pack_ID == '4268604' & City == '上海' ~ Sales * 1700, 
+           Pack_ID == '4268602' & City == '上海' ~ Sales * 4100, 
+           Pack_ID == '4268602' & City == '苏州' ~ Sales * 1.2, 
+           Pack_ID == '4268604' & City == 'National' ~ Sales * 1.08, 
+           Pack_ID == '4268602' & City == 'National' ~ Sales * 1.6 * 1.08, 
+           Prod_Desc == 'JANUVIA' & City == '南京' ~ Sales * 0.8, 
+           Prod_Desc == 'JANUMET' & City == 'National' ~ Sales * 3, 
+           Prod_Desc == 'DIAMICRON' & City %in% c('杭州', '南京', '上海', '苏州') ~ Sales * 2, 
+           Prod_Desc == 'DIAMICRON' & City == 'National' ~ Sales * 1.1, 
+           Prod_Desc == 'VICTOZA' & City == 'National' ~ Sales * 2.5, 
+           TRUE ~ Sales
+         ), 
+         Units = case_when(
+           Pack_ID == '4268604' & City == '福州' ~ Units * 1.8, 
+           Pack_ID == '4268604' & City == '广州' ~ Units * 0.7, 
+           Pack_ID == '4268602' & City == '广州' ~ Units * 4, 
+           Pack_ID == '4268604' & City == '上海' ~ Units * 1700, 
+           Pack_ID == '4268602' & City == '上海' ~ Units * 4100, 
+           Pack_ID == '4268602' & City == '苏州' ~ Units * 1.2, 
+           Pack_ID == '4268604' & City == 'National' ~ Units * 1.08, 
+           Pack_ID == '4268602' & City == 'National' ~ Units * 1.6 * 1.08, 
+           Prod_Desc == 'JANUVIA' & City == '南京' ~ Units * 0.8, 
+           Prod_Desc == 'JANUMET' & City == 'National' ~ Units * 3, 
+           Prod_Desc == 'DIAMICRON' & City %in% c('杭州', '南京', '上海', '苏州') ~ Units * 2, 
+           Prod_Desc == 'DIAMICRON' & City == 'National' ~ Units * 1.1, 
+           Prod_Desc == 'VICTOZA' & City == 'National' ~ Units * 2.5, 
+           TRUE ~ Units
+         ), 
+         DosageUnits = case_when(
+           Pack_ID == '4268604' & City == '福州' ~ DosageUnits * 1.8, 
+           Pack_ID == '4268604' & City == '广州' ~ DosageUnits * 0.7, 
+           Pack_ID == '4268602' & City == '广州' ~ DosageUnits * 4, 
+           Pack_ID == '4268604' & City == '上海' ~ DosageUnits * 1700, 
+           Pack_ID == '4268602' & City == '上海' ~ DosageUnits * 4100, 
+           Pack_ID == '4268602' & City == '苏州' ~ DosageUnits * 1.2, 
+           Pack_ID == '4268604' & City == 'National' ~ DosageUnits * 1.08, 
+           Pack_ID == '4268602' & City == 'National' ~ DosageUnits * 1.6 * 1.08, 
+           Prod_Desc == 'JANUVIA' & City == '南京' ~ DosageUnits * 0.8, 
+           Prod_Desc == 'JANUMET' & City == 'National' ~ DosageUnits * 3, 
+           Prod_Desc == 'DIAMICRON' & City %in% c('杭州', '南京', '上海', '苏州') ~ DosageUnits * 2, 
+           Prod_Desc == 'DIAMICRON' & City == 'National' ~ DosageUnits * 1.1, 
+           Prod_Desc == 'VICTOZA' & City == 'National' ~ DosageUnits * 2.5, 
+           TRUE ~ DosageUnits
+         )) %>% 
   # left_join(adj.factor, by = c("Prod_Desc", "Pack_ID", "City")) %>% 
   # mutate(factor = if_else(is.na(factor), 1, factor),
   #        Sales = round(Sales * factor, 2),
@@ -117,6 +173,27 @@ write.xlsx(msd.result, "03_Outputs/06_MSD_CHC_OAD_2020Q2.xlsx")
 
 
 ##---- Dashboard ----
+# MSD history
+msd.history <- read.xlsx('02_Inputs/MSD_Dashboard_Data_2019_2020Q1_20200721.xlsx', 
+                         sheet = 2)
+
+# DPP4
+add.dpp4 <- msd.history %>% 
+  filter(Prod_Desc %in% c('JANUVIA', 'ONGLYZA', 'FORXIGA', 'GALVUS', 'TRAJENTA', 
+                          'VICTOZA', 'NESINA', 'JANUMET', 'EUCREAS'), 
+         Date == '2020Q1') %>% 
+  mutate(Date = '2020Q2', 
+         Value = case_when(
+           City %in% c('Beijing', 'Shanghai') & Prod_Desc == 'TRAJENTA' ~ Value * 1.185, 
+           City %in% c('Beijing', 'Hangzhou', 'Nanjing', 'Shanghai') & Prod_Desc == 'VICTOZA' ~ Value * 1.247, 
+           City == 'Fuzhou' & Prod_Desc == 'NESINA' ~ Value * 1.089, 
+           City %in% c('Hangzhou', 'Shanghai') & Prod_Desc == 'ONGLYZA' ~ Value * 1.045, 
+           City == 'Shanghai' & Prod_Desc == 'JANUMET' ~ Value * 3, 
+           City == 'Shanghai' & Prod_Desc == 'FORXIGA' ~ Value * 1.924, 
+           TRUE ~ NaN
+         )) %>% 
+  filter(!is.na(Value))
+
 # dashoboard info
 dly.dosage <- read.xlsx("02_Inputs/OAD_PDot转换关系.xlsx", startRow = 4)
 dly.dosage1 <- read.xlsx("02_Inputs/PROD_NAME_Not_Matching1.xlsx")
@@ -154,7 +231,9 @@ msd.dashboard <- msd.result %>%
        variable.name = "Measurement",
        value.name = "Value",
        variable.factor = FALSE) %>% 
-  bind_rows(msd.history[msd.history$Date == '2019', ])
+  bind_rows(msd.history[msd.history$Date == '2019', ], add.dpp4) %>% 
+  mutate(Value = round(Value)) %>% 
+  arrange(Channel, Date, Province, City, MKT, Pack_ID)
 
 write.xlsx(msd.dashboard, '03_Outputs/06_MSD_CHC_OAD_Dashboard_2020Q2.xlsx')
 
@@ -177,7 +256,9 @@ msd.dashboard.m <- msd.result %>%
        value.name = "Value",
        variable.factor = FALSE) %>% 
   filter(Date == '2020Q2') %>% 
-  bind_rows(msd.history)
+  bind_rows(msd.history, add.dpp4) %>% 
+  mutate(Value = round(Value)) %>% 
+  arrange(Channel, Date, Province, City, MKT, Pack_ID)
 
 write.xlsx(msd.dashboard.m, '03_Outputs/06_MSD_CHC_OAD_Dashboard_2020Q2_m.xlsx')
 

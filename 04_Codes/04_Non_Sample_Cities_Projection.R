@@ -74,7 +74,7 @@ universe.proj <- proj.region.list %>%
                         slope),
          final_sales = sales * slope,
          year = stri_sub(quarter, 1, 4)) %>% 
-  filter(final_sales > 0, !(city %in% unique(proj.market$city))) %>% 
+  filter(final_sales > 0, !(city %in% unique(sample.proj$city))) %>% 
   mutate(flag = 1) %>% 
   select(year, quarter, province, city, market, atc3, molecule, 
          packid, sales = final_sales, flag) %>% 

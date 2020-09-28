@@ -88,6 +88,8 @@ msd.city.result <- msd.price %>%
   filter(Sales > 0, Units > 0, DosageUnits > 0) %>% 
   arrange(Date, Province, City, Pack_ID)
 
+write.xlsx(msd.city.result, '03_Outputs/MSD_Province_2020.xlsx')
+
 msd.nation.result <- msd.city.result %>% 
   group_by(Pack_ID, Channel, Province = "National", City = "National", 
            Date, ATC3, MKT, Molecule_Desc, Prod_Desc, Pck_Desc, Corp_Desc) %>% 
@@ -170,6 +172,7 @@ msd.result <- msd.city.result %>%
   arrange(Date, Province, City, Pack_ID)
 
 write.xlsx(msd.result, "03_Outputs/06_MSD_CHC_OAD_2020Q2.xlsx")
+write.xlsx(msd.city.result, '03_Outputs/06_MSD_CHC_OAD_2020Q2_city.xlsx')
 
 
 ##---- Dashboard ----
